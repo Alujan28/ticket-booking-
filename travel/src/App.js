@@ -1,7 +1,57 @@
-import logo from './logo.svg';
+import React, { useState } from 'react';
+import { BrowserRouter, Routes, Route, Link, useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import './App.css';
+import SignInPage from './SignInPage';
+import SignUpPage from './SignUpPage';
 
-function App() {
+const HomePage = () => {
+  const [bookingForm, setBookingForm] = useState({
+    fullName: '',
+    nationalId: '',
+    mobileNumber: '',
+    numberOfSeats: 1,
+    from: '',
+    to: '',
+    date: '',
+  });
+  const [bookingError, setBookingError] = useState('');
+
+  const handleBookingChange = (e) => {
+    setBookingForm({ ...bookingForm, [e.target.name]: e.target.value });
+  };
+
+  const handleBookingSubmit = async (e) => {
+    e.preventDefault();
+    const token = localStorage.getItem('token');
+
+    if (!token) {
+      setBookingError('Please sign in to book a ticket');
+      return;
+    }
+
+    try {
+      const response = await axios.post('http://localhost:5000/api/bookings', bookingForm, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      alert('Booking created successfully!');
+      setBookingForm({
+        fullName: '',
+        nationalId: '',
+        mobileNumber: '',
+        numberOfSeats: 1,
+        from: '',
+        to: '',
+        date: '',
+      });
+      setBookingError('');
+    } catch (err) {
+      setBookingError(err.response?.data?.message || 'Booking failed');
+    }
+  };
+
   return (
     <div className="travelbus-container">
       {/* Header */}
@@ -11,13 +61,18 @@ function App() {
           <ul className="nav-links">
             <li><a href="#">Home</a></li>
             <li><a href="#">Gallery</a></li>
+            <li><a href="#">History</a></li>
             <li><a href="#">Services</a></li>
             <li><a href="#">Contact</a></li>
           </ul>
         </nav>
         <div className="auth-buttons">
-          <button className="signin-btn">Sign In</button>
-          <button className="signup-btn">Sign Up</button>
+          <Link to="/signin">
+            <button className="signin-btn">Sign In</button>
+          </Link>
+          <Link to="/signup">
+            <button className="signup-btn">Sign Up</button>
+          </Link>
         </div>
       </header>
 
@@ -27,9 +82,8 @@ function App() {
           <h2>Explore the Journey, Not Just the Destination</h2>
           <p>Travel with style, your next adventure with TravelBus, and experience the beauty of the country.</p>
           <a href="#booking-section">
-  <button className="book-now-btn">Book Now</button>
-</a>
-
+            <button className="book-now-btn">Book Now</button>
+          </a>
         </div>
       </section>
 
@@ -37,48 +91,94 @@ function App() {
       <section className="booking-section" id="booking-section">
         <div className="booking-form-container">
           <h3>Book Your Ticket</h3>
-          <form className="booking-form">
+          {bookingError && <p className="error-message">{bookingError}</p>}
+          <form className="booking-form" onSubmit={handleBookingSubmit}>
             <div className="form-row">
               <div className="form-group">
                 <label>Full Name</label>
-                <input type="text" placeholder="John Doe" />
+                <input
+                  type="text"
+                  name="fullName"
+                  value={bookingForm.fullName}
+                  onChange={handleBookingChange}
+                  placeholder="John Doe"
+                  required
+                />
               </div>
               <div className="form-group">
                 <label>National ID Number</label>
-                <input type="text" placeholder="1234567890" />
+                <input
+                  type="text"
+                  name="nationalId"
+                  value={bookingForm.nationalId}
+                  onChange={handleBookingChange}
+                  placeholder="1234567890"
+                  required
+                />
               </div>
             </div>
             <div className="form-row">
               <div className="form-group">
                 <label>Mobile Number</label>
-                <input type="text" placeholder="+1 (123) 456-7890" />
+                <input
+                  type="text"
+                  name="mobileNumber"
+                  value={bookingForm.mobileNumber}
+                  onChange={handleBookingChange}
+                  placeholder="+1 (123) 456-7890"
+                  required
+                />
               </div>
               <div className="form-group">
                 <label>Number of Seats</label>
-                <input type="number" placeholder="1" />
+                <input
+                  type="number"
+                  name="numberOfSeats"
+                  value={bookingForm.numberOfSeats}
+                  onChange={handleBookingChange}
+                  placeholder="1"
+                  min="1"
+                  required
+                />
               </div>
             </div>
             <div className="form-row">
               <div className="form-group">
                 <label>From</label>
-                <select>
-                  <option>Select departure city</option>
-                  <option>New York</option>
-                  <option>Los Angeles</option>
+                <select
+                  name="from"
+                  value={bookingForm.from}
+                  onChange={handleBookingChange}
+                  required
+                >
+                  <option value="">Select departure city</option>
+                  <option value="New York">New York</option>
+                  <option value="Los Angeles">Los Angeles</option>
                 </select>
               </div>
               <div className="form-group">
                 <label>To</label>
-                <select>
-                  <option>Select destination city</option>
-                  <option>Washington DC</option>
-                  <option>Chicago</option>
+                <select
+                  name="to"
+                  value={bookingForm.to}
+                  onChange={handleBookingChange}
+                  required
+                >
+                  <option value="">Select destination city</option>
+                  <option value="Washington DC">Washington DC</option>
+                  <option value="Chicago">Chicago</option>
                 </select>
               </div>
             </div>
             <div className="form-group">
               <label>Date</label>
-              <input type="date" />
+              <input
+                type="date"
+                name="date"
+                value={bookingForm.date}
+                onChange={handleBookingChange}
+                required
+              />
             </div>
             <button type="submit" className="submit-btn">Book Now</button>
           </form>
@@ -109,7 +209,6 @@ function App() {
               <div className="destination-content">
                 <h4>{destination.name}</h4>
                 <p>{destination.desc}</p>
-                {/* <a href="#">Read More →</a> */}
               </div>
             </div>
           ))}
@@ -120,17 +219,16 @@ function App() {
       <section className="story-section">
         <h3>Our Story</h3>
         <p>
-  For over 25 years, TravelBus has been at the forefront of connecting cities and people across the nation, offering a reliable and safe transportation service that millions of travelers trust. What began in 1998 as a small fleet of buses has evolved into one of the country’s most prominent and dependable transportation networks. Our journey has been driven by an unwavering commitment to providing exceptional service, prioritizing both the comfort and safety of our passengers. From the very start, we set out to make travel a more enjoyable experience by offering efficient, affordable, and dependable options for people across the country.<br /><br />
-  
-  As our fleet has grown and our reach expanded, we’ve remained dedicated to ensuring that every journey, whether for business, leisure, or family trips, is as smooth and memorable as possible. Our focus on delivering high-quality service has helped us build a reputation as one of the most trusted names in the industry, earning the loyalty of millions. Every day, we work tirelessly to maintain the highest standards, providing passengers with clean, well-maintained buses, professional drivers, and outstanding customer care.<br /><br />
+          For over 25 years, TravelBus has been at the forefront of connecting cities and people across the nation, offering a reliable and safe transportation service that millions of travelers trust. What began in 1998 as a small fleet of buses has evolved into one of the country’s most prominent and dependable transportation networks. Our journey has been driven by an unwavering commitment to providing exceptional service, prioritizing both the comfort and safety of our passengers. From the very start, we set out to make travel a more enjoyable experience by offering efficient, affordable, and dependable options for people across the country.<br /><br />
+          
+          As our fleet has grown and our reach expanded, we’ve remained dedicated to ensuring that every journey, whether for business, leisure, or family trips, is as smooth and memorable as possible. Our focus on delivering high-quality service has helped us build a reputation as one of the most trusted names in the industry, earning the loyalty of millions. Every day, we work tirelessly to maintain the highest standards, providing passengers with clean, well-maintained buses, professional drivers, and outstanding customer care.<br /><br />
 
-  Whether you’re exploring new destinations or simply commuting to work, we’re here to ensure your travel is stress-free and enjoyable. At TravelBus, we understand that each journey is important, and we strive to make every one of them a positive experience. Thank you for choosing us where every journey truly matters, and we’re honored to be a part of your travels across the country.
-</p>
-
+          Whether you’re exploring new destinations or simply commuting to work, we’re here to ensure your travel is stress-free and enjoyable. At TravelBus, we understand that each journey is important, and we strive to make every one of them a positive experience. Thank you for choosing us where every journey truly matters, and we’re honored to be a part of your travels across the country.
+        </p>
       </section>
 
       {/* Our Services */}
-      <section className="services-section" id='services-section'>
+      <section className="services-section" id="services-section">
         <h3>Our Services</h3>
         <p>Check out our popular routes. We offer frequent departures to give you flexibility in your travel plans.</p>
         <table className="services-table">
@@ -169,11 +267,11 @@ function App() {
       <footer className="footer">
         <div className="footer-column">
           <h4>TravelBus</h4>
-          <p>Making travel comfortable, affordable for everyone.</p>
+          <p>Making travel comfortable, convenient, and affordable for everyone.</p>
           <div className="social-links">
-            <a href="#">🐦</a>
             <a href="#">📘</a>
             <a href="#">📷</a>
+            <a href="#">🐦</a>
           </div>
         </div>
         <div className="footer-column">
@@ -181,6 +279,7 @@ function App() {
           <ul>
             <li><a href="#">Home</a></li>
             <li><a href="#">Gallery</a></li>
+            <li><a href="#">History</a></li>
             <li><a href="#">Services</a></li>
             <li><a href="#">Contact</a></li>
             <li><a href="#">Group Booking</a></li>
@@ -189,19 +288,41 @@ function App() {
           </ul>
         </div>
         <div className="footer-column">
+          <h4>Services</h4>
+          <ul>
+            <li><a href="#">Bus Tickets</a></li>
+            <li><a href="#">Group Booking</a></li>
+            <li><a href="#">Tour Packages</a></li>
+            <li><a href="#">Corporate Travel</a></li>
+            <li><a href="#">Charter Services</a></li>
+          </ul>
+        </div>
+        <div className="footer-column">
           <h4>Contact Us</h4>
           <p>
             123 Travel St, New York, NY 10001<br />
-            +1 (123) 456-7890<br />
+            +1 (555) 123-4567<br />
             info@travelbus.com<br />
-            Mon - Fri: 9AM - 5PM
+            Mon - Fri: 8AM - 8PM
           </p>
         </div>
       </footer>
       <div className="footer-bottom">
-        © 2023 TravelBus. All rights reserved.
+        © 2025 TravelBus. All rights reserved.
       </div>
     </div>
+  );
+};
+
+function App() {
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<HomePage />} />
+        <Route path="/signin" element={<SignInPage />} />
+        <Route path="/signup" element={<SignUpPage />} />
+      </Routes>
+    </BrowserRouter>
   );
 }
 

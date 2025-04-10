@@ -1,7 +1,31 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import './App.css';
 
 const SignInPage = () => {
+  const [formData, setFormData] = useState({
+    email: '',
+    password: '',
+  });
+  const [error, setError] = useState('');
+  const navigate = useNavigate();
+
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const response = await axios.post('http://localhost:5000/api/auth/signin', formData);
+      localStorage.setItem('token', response.data.token); // Store JWT token
+      navigate('/'); // Redirect to homepage after successful sign-in
+    } catch (err) {
+      setError(err.response?.data?.message || 'Sign-in failed');
+    }
+  };
+
   return (
     <div className="signin-container">
       {/* Header */}
@@ -27,21 +51,36 @@ const SignInPage = () => {
         <div className="signin-form-container">
           <h2>Welcome Back</h2>
           <p>Sign in to your TravelBus account</p>
-          <form className="signin-form">
+          {error && <p className="error-message">{error}</p>}
+          <form className="signin-form" onSubmit={handleSubmit}>
             <div className="form-group">
               <label>Email or Username</label>
-              <input type="text" placeholder="john@example.com" />
+              <input
+                type="text"
+                name="email"
+                value={formData.email}
+                onChange={handleChange}
+                placeholder="john@example.com"
+                required
+              />
             </div>
             <div className="form-group">
               <label>Password</label>
               <div className="password-group">
-                <input type="password" placeholder="Password" />
+                <input
+                  type="password"
+                  name="password"
+                  value={formData.password}
+                  onChange={handleChange}
+                  placeholder="Password"
+                  required
+                />
                 <a href="#" className="forgot-password">Forgot password?</a>
               </div>
             </div>
             <button type="submit" className="submit-btn">Sign In</button>
             <p className="signup-link">
-              Don't have an account? <a href="#">Sign up</a>
+              Don't have an account? <a href="/signup">Sign up</a>
             </p>
           </form>
         </div>
